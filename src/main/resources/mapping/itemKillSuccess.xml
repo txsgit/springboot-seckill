@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.txs.mapper.ItemKillSuccessMapper">
+
+    <!--根据秒杀活动跟用户Id查询用户的抢购数量-->
+    <select id="countByKillUserId" resultType="java.lang.Integer">
+        SELECT
+        COUNT(1) AS total
+        FROM
+        item_kill_success
+        WHERE
+        user_id = #{userId}
+        AND kill_id = #{killId}
+        <!-- AND `status` IN (-1, 0) -->
+        AND `status` IN (0)
+    </select>
+
+
+    <insert id="insertSelective" parameterType="com.txs.bean.ItemKillSuccess" >
+        insert into item_kill_success
+        <trim prefix="(" suffix=")" suffixOverrides="," >
+            <if test="code != null" >
+                code,
+            </if>
+            <if test="itemId != null" >
+                item_id,
+            </if>
+            <if test="killId != null" >
+                kill_id,
+            </if>
+            <if test="userId != null" >
+                user_id,
+            </if>
+            <if test="status != null" >
+                status,
+            </if>
+            <if test="createTime != null" >
+                create_time,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides="," >
+            <if test="code != null" >
+                #{code,jdbcType=VARCHAR},
+            </if>
+            <if test="itemId != null" >
+                #{itemId,jdbcType=INTEGER},
+            </if>
+            <if test="killId != null" >
+                #{killId,jdbcType=INTEGER},
+            </if>
+            <if test="userId != null" >
+                #{userId,jdbcType=VARCHAR},
+            </if>
+            <if test="status != null" >
+                #{status,jdbcType=TINYINT},
+            </if>
+            <if test="createTime != null" >
+                #{createTime,jdbcType=TIMESTAMP},
+            </if>
+        </trim>
+    </insert>
+
+    <!--根据秒杀成功后的订单编码查询-->
+    <select id="selectByCode" resultType="com.txs.bean.KillSuccessUserInfo">
+    SELECT
+      a.*,
+      a.create_time as createTime,
+      b.user_name as userName,
+      b.phone,
+      b.email,
+      c.name AS itemName
+    FROM item_kill_success AS a
+      LEFT JOIN user b ON b.id = a.user_id
+      LEFT JOIN item c ON c.id = a.item_id
+    WHERE a.code = #{code}
+          AND b.is_active = 1
+  </select>
+</mapper>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.txs.mapper.UserMapper">
+
+    <select id="selectUser" resultType="com.txs.bean.User">
+        select
+        *
+        from user
+        where
+        1=1
+        <if test="id !=null and id !=''">and id=#{id}</if>
+        <if test="user_name !=null and user_name !=''">and user_name=#{username}</if>
+        <if test="password !=null and password !=''">and password=#{password}</if>
+
+    </select>
+
+</mapper>

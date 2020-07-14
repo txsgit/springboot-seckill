@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.txs.mapper.ItemKillMapper">
+
+    <select id="selectAll" resultType="com.txs.bean.ItemKill">
+        SELECT
+          a.*,
+          a.start_time as startTime,
+          a.end_time as endTime,
+          a.create_time as createTime,
+          b.name AS itemName,
+          (
+            CASE WHEN (now() BETWEEN a.start_time AND a.end_time AND a.total > 0)
+              THEN 1
+            ELSE 0
+            END
+          )      AS canKill
+        FROM item_kill AS a LEFT JOIN item AS b ON b.id = a.item_id
+        WHERE a.is_active = 1
+    </select>
+
+    <!--获取秒杀详情-->
+    <select id="selectById" resultType="com.txs.bean.ItemKill">
+    SELECT
+      a.*,
+      a.item_id as itemId,
+      a.start_time as startTime,
+      a.end_time as endTime,
+      a.create_time as createTime,
+      b.name AS itemName,
+      (
+        CASE WHEN (now() BETWEEN a.start_time AND a.end_time AND a.total > 0)
+          THEN 1
+        ELSE 0
+        END
+      )      AS canKill
+    FROM item_kill AS a LEFT JOIN item AS b ON b.id = a.item_id
+    WHERE a.is_active = 1 AND a.id= #{id}
+  </select>
+    <!--获取是否可以被秒杀数据-->
+    <select id="selectInfoById" resultType="com.txs.bean.ItemKill">
+    SELECT
+      id,
+      total,
+      version,
+      item_id as itemId,
+      (
+        CASE WHEN (now() BETWEEN start_time AND end_time AND total > 0)
+          THEN 1
+        ELSE 0
+        END
+      )      AS canKill
+    FROM item_kill
+    WHERE is_active = 1 AND id= #{id} and total > 0
+  </select>
+    <!--抢购商品，剩余数量减一-->
+    <update id="updateKillItem">
+    UPDATE item_kill
+    SET total = total - 1
+    WHERE id = #{killId}
+  AND total>0
+  </update>
+
+  <!--抢购商品，使用version字段乐观锁剩余数量减一-->
+  <update id="updateKillItemDBoc">
+    UPDATE item_kill
+    SET total = total - 1,version=version+1
+    WHERE id = #{killId}
+  AND total>0 and version=#{version}
+  </update>
+
+
+</mapper>

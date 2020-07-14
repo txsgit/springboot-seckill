@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Configuration status 用于设置log4j2自身内部日志的信息输出级别，默认是WARN-->
+<!--日志级别以及优先级排序: OFF > FATAL > ERROR > WARN > INFO > DEBUG > TRACE > ALL -->
+<!--monitorInterval="30"  :间隔秒数,自动检测配置文件的变更和重新配置本身-->
+<Configuration status="WARN"  monitorInterval="30" >
+    <Appenders>
+        <!-- Console 这个输出控制台的配置-->
+        <Console name="Console" target="SYSTEM_OUT">
+            <!-- PatternLayout 输出日志的格式-->
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <!-- 将业务dao接口填写进去,并用控制台输出即可 -->
+<!--        如果将level定义为DEBUG则只会打印出SQL语句,SQL参数以及结果条数-->
+<!--        如果将level定义为TRACE则会打印出SQL语句,SQL参数以及结果集还有结果条数, -->
+        <logger name="com.txs.mapper" level="TRACE" additivity="false">
+            <appender-ref ref="Console"/>
+        </logger>
+        <!-- Logger 节点用来单独指定 package 包下的 class 的日志输出格式等信息 -->
+        <logger  name="org.springframework.web" level="DEBUG" additivity="false">
+            <!-- 指定 org.springframework 的 level 及更高优先级的日志只在控制台输出 -->
+            <!-- additivity="false" 只在自定义的Appender中进行输出 -->
+            <AppenderRef ref="Console"/>
+        </logger >
+        <!--然后定义logger，只有定义了logger并引入的appender，appender才会生效-->
+
+        <root level="INFO">
+            <appender-ref ref="Console" />
+        </root>
+    </Loggers>
+</Configuration>
