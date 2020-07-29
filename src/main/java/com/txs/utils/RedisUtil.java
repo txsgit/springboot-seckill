@@ -71,6 +71,21 @@ public class RedisUtil {
     }
 
     /**
+     * 加锁--非原子性操作，一旦出现宕机就出现死锁
+     * @param lockKey
+     * @param value
+     * @param unit
+     * @param timeout
+     */
+    public Boolean tryLockExpir(String lockKey,String value, TimeUnit unit ,int timeout)
+    {
+//        String uuid = UUID.randomUUID().toString().replaceAll("-","");
+
+
+        return redisTemplate.opsForValue().setIfAbsent(lockKey,value,timeout,unit);
+    }
+
+    /**
      * 释放锁
      * @param lockKey
      * @param value

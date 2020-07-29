@@ -53,11 +53,18 @@ public class ItemKillController {
            *使用redis setnx+expire实现分布式锁
            * 这种实现有个bug，就是非原子操作，redis宕机会出现死锁
            */
-//          Result result=itemKillService.killItemRedisLock(killId,userId);
+          Result result=itemKillService.killItemRedisLock(killId,userId);
 
           //使用redisson客户端获取锁，原子操作  数据正常
           //也不超买，也没有重复数据
-          Result result=itemKillService.killItemRedisson(killId,userId);
+//          Result result=itemKillService.killItemRedisson(killId,userId);
+
+          /**
+           *使用redis2.1以上版本提供的 set+expire实现分布式锁
+           * 类似redisson的锁
+           *  要注意这个锁的过期时间限制，间隔太小，业务逻辑没有处理完就解锁会出现重复购买
+           */
+//          Result result=itemKillService.killItemRedis(killId,userId);
 
           //zookeeper分布式锁启动需要创建节点，启动比较慢
 

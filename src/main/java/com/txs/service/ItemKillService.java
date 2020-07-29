@@ -59,5 +59,14 @@ public interface ItemKillService {
      */
     public Result killItemRedisson(Long killId, Long userId);
 
+    /**
+     * 秒杀商品-----使用redis分布式锁 使用redis2.1以上新提供的方法
+     * 类似redisson的锁
+     * @param killId
+     * @param userId
+     * @return
+     */
+    public Result killItemRedis(Long killId, Long userId);
+
     public KillSuccessUserInfo getKillSuccessUser(String code);
 }

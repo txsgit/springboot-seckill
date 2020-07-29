@@ -36,6 +36,15 @@ public class RedissonUtil {
     }
 
     /**
+     * 加锁
+     * @param lockKey
+     */
+    public  void lock(String lockKey) {
+        RLock lock = redisson.getLock(lockKey);
+        lock.lock();
+    }
+
+    /**
      * 尝试获取锁
      * @param lockKey
      * @param waitTime 最多等待时间

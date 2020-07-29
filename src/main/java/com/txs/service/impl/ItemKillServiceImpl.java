@@ -9,6 +9,7 @@ import com.txs.service.ItemKillService;
 import com.txs.utils.*;
 import org.redisson.api.RLock;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,9 @@ public class ItemKillServiceImpl implements ItemKillService {
 
     @Autowired
     ItemKillSuccessMapper itemKillSuccessMapper;
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
 
     private SnowFlake snowFlake=new SnowFlake(2,3);
     @Override
@@ -288,6 +292,7 @@ public class ItemKillServiceImpl implements ItemKillService {
             /**
              * 尝试获取锁，最多等待3秒，上锁以后10秒自动解锁
              */
+           // redissonUtil.lock(key); 该方法不自动释放锁，根据业务不断续锁时间
             boolean rec= redissonUtil.tryLock(key,TimeUnit.SECONDS,3,10);
             if(rec)
             {
@@ -339,6 +344,80 @@ public class ItemKillServiceImpl implements ItemKillService {
 
         return new Result(SysConstant.ResultStatus.FAIL.getCode(),"秒杀失败！",null);
     }
+
+
+
+    /**
+     * 秒杀商品-----使用redis分布式锁 使用redis2.1以上新提供的方法
+     * 类似redisson的锁
+     * @param killId
+     * @param userId
+     * @return
+     */
+    @Override
+    @Transactional
+    public Result killItemRedis(Long killId, Long userId) {
+
+        final String key=new StringBuffer().append(killId).append(userId).append("-RedisLock").toString();
+        final String value= UUID.randomUUID().toString().replaceAll("-","");
+        try {
+
+            //30秒释放该key
+            //该操作非原子操作，一旦出现redis宕机可能产生死锁
+            //要注意这个锁的过期时间限制，间隔太小，业务逻辑没有处理完就解锁会出现重复购买
+           boolean flag= redisUtil.tryLockExpir(key,value,TimeUnit.SECONDS,50);
+            System.out.println("#######key: "+key+" ******value: "+value+" &&&&&&flag: "+flag);
+            if(flag)
+            {
+                Result result=null;
+
+                if(null !=killId && null !=userId)
+                {
+                    //判断用户是否秒杀过该商品
+                    int count= itemKillSuccessMapper.countByKillUserId(killId,userId);
+                    if(count <=0)
+                    {
+                        //判断商品是否可以被秒杀
+                        ItemKill itemKill= itemKillMapper.selectInfoById(killId);
+                        if(null !=itemKill && 1==itemKill.getCanKill() && itemKill.getTotal() > 0)
+                        {
+                            //执行秒杀库存减一
+                            int res=itemKillMapper.updateKillItem(killId);
+                            if(res > 0)
+                            {
+                                //秒杀成功生成秒杀订单
+                                commonInsertItem(itemKill,userId);
+                            }else
+                            {
+                                return  new Result(SysConstant.ResultStatus.FAIL.getCode(),"商品库存减一失败",null);
+                            }
+
+                        }else
+                        {
+                            return new Result(SysConstant.ResultStatus.FAIL.getCode(),"该商品不能被秒杀",null);
+                        }
+
+                    }else {
+                        return new Result(SysConstant.ResultStatus.FAIL.getCode(),"您已经购买过了！",null);
+                    }
+
+
+                }
+            }
+
+
+
+        }catch (Exception e)
+        {
+            e.printStackTrace();
+        }finally {
+            redisUtil.unlock(key,value);
+        }
+
+
+        return new Result(SysConstant.ResultStatus.FAIL.getCode(),"秒杀失败！",null);
+    }
+
 
     public Result commonInsertItem(ItemKill itemKill, Long userId)
     {
